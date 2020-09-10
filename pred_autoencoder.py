@@ -27,11 +27,11 @@ def main_test(model=None, test_loader=None, args=None,):
     ##########################################################################
     if args.server == 'server_A':
         work_dir = os.path.join('/data1/JM/'
-                                'spina_cord_segmentation', args.exp)
+                                'spinal_cord_segmentation', args.exp)
         print(work_dir)
     elif args.server == 'server_B':
         work_dir = os.path.join('/data1/workspace/JM_gen/'
-                                'spina_cord_segmentation', args.exp)
+                                'spinal_cord_segmentation', args.exp)
         print(work_dir)
     ##########################################################################
     file_name = args.file_name

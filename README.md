@@ -27,48 +27,33 @@
 - NumPy
 - pandas
 - matplotlib
+- medpy
+- AdamP
+- opencv
 
 
 ### Segmentation - Train Examples
-* python3 main.py  --exp test --train-site site2 --test-site1 site1 --test-site2 site3 --test-site3 site4 --arch unet --loss-function bce --input-size 128 --batch-size 8 --lr-schedule 100 150 --arg-mode True --arg-thres 0.5 --initial-lr 0.1 --train-size 0.7
+* python3 main_unet.py  --server server_A --exp exp_test --arch unet --source-dataset site2 --optim adam --weight-decay 5e-4 --loss-function bce_logit --batch-size 8  --lr 0.1 --lr-schedule 100 120 --aug-mode True --aug-range aug6 --train-size 0.7 
 
+* python3 main_proposed_embedding.py  --server server_A --exp exp_test --source-dataset site2 --seg-loss-function Cldice --ae-loss-function Cldice --embedding-loss mse --embedding-alpha 1 --optim adam --weight-decay 5e-4 --batch-size 8 --lr 0.1 --lr-schedule 100 120 --aug-mode True --aug-range aug6 --train-size 0.7 
 
-
-```
-python3 main.py  \
---exp test \
---train-site site2 \
---test-site1 site1 \
---test-site2 site3 \
---test-site3 site4 \
---arch unet \
---loss-function bce \
---input-size 128 \
---batch-size 8 \
---lr-schedule 100 150 \
---arg-mode True \
---arg-thres 0.5 \
---initial-lr 0.1 \
---train-size 0.7
-
-```
 | Args 	| Options 	| Description 	|
 |---------|--------|----------------------------------------------------|
 | work-dir |  [str] 	| Working folder. 	|
 | exp 	| [str] 	| ./test/	|
 | arch 	|  [str] 	| model architecture. |
-| train-site 	|  [str] 	| train-dataset. help='stie1','stie2','stie3','stie4'|
-| test-site1 	|  [str] 	| test-dataset. help='stie1','stie2','stie3','stie4'|
-| test-site2  |  [str] 	| test-dataset. help='stie1','stie2','stie3','stie4'|
-| test-site3	  |  [str] 	| test-dataset. help='stie1','stie2','stie3','stie4'|
-| loss-function	  |  [str] 	| segmentation loss function. |
-| input_size 	| [int] 	| Size of data. default : 128|
+| source-dataset 	|  [str] 	| train-dataset. help='stie1','stie2','stie3','stie4'|
 | batch_size 	| [int] 	| number of samples per batch. default : 8|
+| arch 	|  [str] 	| model architecture. |
+| arch-ae-detach 	|  [str] 	| autoencoder detach setting. default : True |
+| embedding-alpha 	|  [float] 	| embedding loss weight. default : 1 |
+| optim 	|  [str] 	| optimizer. choices=['adam','adamp','sgd']. default : sgd |
+| loss-function 	|  [str] 	| loss-function. |
 | lr-schedule | [int] 	| number of epochs for training. default : 100 120 |
-| initial-lr 	| [float] 	| learning rate. defalut : 0.1	|
-| arg-mode | [str] | augmentation mode :  defalut : False|
-| arg-thres | [float] | augmentation threshold. default : 0.5|
-| train-size| [float] | train dataset size. default : 0.8 |
+| lr 	| [float] 	| learning rate. defalut : 0.1	|
+| aug-mode | [str] | augmentation mode :  defalut : False |
+| aug-range | [float] | augmentation range. default : aug6 |
+| train-size| [float] | train dataset size. default : 0.7 |
 
 
 

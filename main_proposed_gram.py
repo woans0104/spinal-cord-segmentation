@@ -88,11 +88,11 @@ args = parser.parse_args()
 def main():
     # save input stats for later use
     if args.server == 'server_A':
-        work_dir = os.path.join('/data1/JM/spina_cord_segmentation', args.exp)
+        work_dir = os.path.join('/data1/JM/spinal_cord_segmentation', args.exp)
         print(work_dir)
     elif args.server == 'server_B':
         work_dir = os.path.join('/data1/workspace/JM_gen/'
-                                'spina_cord_segmentation', args.exp)
+                                'spinal_cord_segmentation', args.exp)
         print(work_dir)
 
     if not os.path.exists(work_dir):

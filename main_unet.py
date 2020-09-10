@@ -79,13 +79,18 @@ args = parser.parse_args()
 
 
 def main():
-    # save input stats for later use
+
+    ###########################################################################
     if args.server == 'server_A':
-        work_dir = os.path.join('/data1/JM/spina_cord_segmentation', args.exp)
+        work_dir = os.path.join('/data1/JM/spinal_cord_segmentation', args.exp)
         print(work_dir)
     elif args.server == 'server_B':
         work_dir = os.path.join('/data1/workspace/JM_gen/'
-                                'spina_cord_segmentation', args.exp)
+                                'spinal_cord_segmentation', args.exp)
+        print(work_dir)
+
+    elif args.server == 'server_D':
+        work_dir = os.path.join('/daintlab/home/woans0104/workspace', args.exp)
         print(work_dir)
 
     if not os.path.exists(work_dir):
@@ -96,7 +101,7 @@ def main():
     with open(os.path.join(work_dir, 'args.pkl'), 'wb') as f:
         pickle.dump(args, f)
 
-    #import ipdb;ipdb.set_trace()
+    ###########################################################################
 
 
     source_dataset, target_dataset1, target_dataset2, target_dataset3 \
