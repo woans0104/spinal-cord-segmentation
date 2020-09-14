@@ -252,7 +252,7 @@ def save_fig(exam_id, org_input, org_target, prediction, iou,
     target_slice = org_target
     pred_slice = prediction
 
-    i_w, i_h = input_slice.shape()
+    i_w, i_h = input_slice.shape
 
     target_slice_pos_pixel = target_slice.sum()
     target_slice_pos_pixel_rate = np.round(target_slice_pos_pixel

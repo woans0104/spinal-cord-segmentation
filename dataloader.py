@@ -10,6 +10,7 @@ import torchvision.transforms.functional as tF
 import torch.utils.data as data
 from torch.utils.data.dataset import Dataset
 
+import cv2
 
 ##
 
@@ -78,7 +79,7 @@ class Spinal_Dataset(Dataset):
 
 
 
-    def aug(self,image,arg_range):
+    def aug(self,image,aug_range):
         """
         # Resize
 
@@ -114,14 +115,14 @@ class Spinal_Dataset(Dataset):
 
 
         """
-        if arg_range == 'aug7':
+        if aug_range == 'aug7':
             brightness_factor = random.uniform(0.4, 1.4)
             image = tF.adjust_brightness(image, brightness_factor)
 
             contrast_factor = random.uniform(0.4, 1.4)
             image = tF.adjust_contrast(image, contrast_factor)
 
-        elif arg_range == 'aug1':
+        elif aug_range == 'aug1':
             brightness_factor = random.uniform(0.8, 1.2)
             image = tF.adjust_brightness(image, brightness_factor)
 
@@ -129,12 +130,17 @@ class Spinal_Dataset(Dataset):
             image = tF.adjust_contrast(image, contrast_factor)
 
 
-        elif arg_range == 'aug2':
+        elif aug_range == 'aug2':
             brightness_factor = random.uniform(0.6, 1.4)
             image = tF.adjust_brightness(image, brightness_factor)
 
             contrast_factor = random.uniform(0.6, 1.4)
             image = tF.adjust_contrast(image, contrast_factor)
+
+        elif aug_range == 'aug9':
+
+            color_jitter = transforms.ColorJitter(brightness=0.2, contrast=0.2)
+            image = color_jitter(image)
 
         else:
             print('not augmentation')
@@ -155,6 +161,9 @@ class Spinal_Dataset(Dataset):
 
         image = np.array(Image.open(image).convert('L'), 'uint8')
         mask = np.array(Image.open(mask).convert('L'), 'uint8')
+
+        # histogram equalization
+        image = cv2.equalizeHist(image)  ##########
 
         # center_crop
         image_crop, mask_crop = self.center_crop(image, mask, self.dataset)
@@ -251,6 +260,7 @@ def get_loader(server, dataset, train_size, batch_size, input_size,
         trn_loader = data.DataLoader(trn_dataset,
                                        batch_size=batch_size,
                                        shuffle=True,
+                                       drop_last = True, ####################
                                        num_workers=4)
 
         tst_dataset = Spinal_Dataset(tst_image_path,
@@ -400,72 +410,3 @@ def load_data_path(server, dataset, train_size):
         return train_image_paths, train_mask_paths, \
                test_image_paths, test_mask_paths
 
-
-# def make_spinal_cord_dataset(server, site_name, train_size):
-#     # simple division : train_size_6,val_size_2,test_size_2
-#     # if valsize == false : train_size_7, test_size_3
-#     print('now dataset', site_name)
-#
-#     valid_exts = ['.png']  # 이 확장자들만 불러오겠다.
-#
-#     # simple division : train_size_6,val_size_2,test_size_2
-#     # if valsize == false : train_size_7, test_size_3
-#     print('now dataset', site_name)
-#
-#     if server == 'server_A':
-#         image_folder = sorted(glob.glob(('/data2/woans0104/Spinal_cord_dataset/voting2/{}/image/*'.format(site_name))))
-#         mask_folder = sorted(glob.glob(('/data2/woans0104/Spinal_cord_dataset/voting2/{}/label/*'.format(site_name))))
-#     elif server == 'server_B':
-#         image_folder = sorted(glob.glob(('/data2/spinal_cord_dataset/voting2/{}/image/*'.format(site_name))))
-#         mask_folder = sorted(glob.glob(('/data2/spinal_cord_dataset/voting2/{}/label/*'.format(site_name))))
-#
-#
-#
-#     # 폴더 안의 확장자들만 가져오기
-#
-#     image_paths = []
-#     target_paths = mask_folder
-#
-#     for f in image_folder:
-#         ext = os.path.splitext(f)[1]  # 확장자만 가져오기
-#
-#         if ext.lower() not in valid_exts:
-#             continue
-#         if 'mask' not in os.path.splitext(f)[0].split('\\')[-1]:
-#             image_paths.append(f)
-#
-#     print(len(image_paths))
-#
-#     print(len(target_paths))
-#
-#     assert len(image_paths) == len(target_paths);
-#     'not same image & target lenths : image len : {} , target len : {}'.format(str(len(image_paths)),
-#                                                                                str(len(target_paths)))
-#
-#     # last sort
-#     image_paths = sorted(image_paths)
-#     target_paths = sorted(target_paths)
-#
-#     # split train/test
-#
-#     len_data = len(image_paths)
-#     indices_image = list(range(len_data))
-#
-#     # np.random.seed(random_seed)
-#     np.random.shuffle(indices_image)
-#
-#     image_paths = np.array(image_paths)
-#     target_paths = np.array(target_paths)
-#
-#     train_image_no = indices_image[:int(len_data * train_size)]
-#     test_image_no = indices_image[int(len_data * train_size):]
-#
-#     train_image_paths = image_paths[train_image_no]
-#     train_mask_paths = target_paths[train_image_no]
-#
-#     test_image_paths = image_paths[test_image_no]
-#     test_mask_paths = target_paths[test_image_no]
-#
-#     print('end load data')
-#
-#     return [train_image_paths, train_mask_paths], [test_image_paths, test_mask_paths]

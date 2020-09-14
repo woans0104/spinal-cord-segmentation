@@ -25,17 +25,21 @@ import dataloader as loader
 
 
 def main_test(model=None, test_loader=None, args=None,):
-
-    ##########################################################################
+    ###########################################################################
     if args.server == 'server_A':
-        work_dir = os.path.join('/data1/JM/'
-                                'spinal_cord_segmentation', args.exp)
+        work_dir = os.path.join('/data1/JM/spinal_cord_segmentation', args.exp)
         print(work_dir)
     elif args.server == 'server_B':
         work_dir = os.path.join('/data1/workspace/JM_gen/'
                                 'spinal_cord_segmentation', args.exp)
         print(work_dir)
-    ##########################################################################
+
+    elif args.server == 'server_D':
+        work_dir = os.path.join('/daintlab/home/woans0104/workspace/'
+                                'spinal-cord-segmentation', args.exp)
+        print(work_dir)
+
+    ###########################################################################
     file_name = args.file_name
 
     result_dir = os.path.join(work_dir, file_name)

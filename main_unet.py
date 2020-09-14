@@ -90,7 +90,8 @@ def main():
         print(work_dir)
 
     elif args.server == 'server_D':
-        work_dir = os.path.join('/daintlab/home/woans0104/workspace', args.exp)
+        work_dir = os.path.join('/daintlab/home/woans0104/workspace/'
+                                'spinal-cord-segmentation', args.exp)
         print(work_dir)
 
     if not os.path.exists(work_dir):
@@ -102,7 +103,6 @@ def main():
         pickle.dump(args, f)
 
     ###########################################################################
-
 
     source_dataset, target_dataset1, target_dataset2, target_dataset3 \
         = loader.dataset_condition(args.source_dataset)
