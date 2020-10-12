@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 #########################################################################################################
 
@@ -206,18 +205,19 @@ class StackDecoder_norm(nn.Module):
 
 
 
+
 class Unet2D_spinal(nn.Module):
     """
     ori unet : padding =1, momentum=0.1,coordconv =False
     down_crop unet : padding =0, momentum=0.1,coordconv =False
     """
 
-    def __init__(self, in_shape, padding=1, momentum=0.1,start_channel=64):
+    def __init__(self, in_shape, padding=1, momentum=0.1,start_channel=64, relu_con=True):
         super(Unet2D_spinal, self).__init__()
         self.channels, self.heights, self.width = in_shape
         self.padding = padding
         self.start_channel = start_channel
-
+        self.relu_con = relu_con
 
         self.down1 = StackEncoder(self.channels, self.start_channel, padding, momentum=momentum)
         self.down2 = StackEncoder(self.start_channel, self.start_channel*2, padding, momentum=momentum)
@@ -226,7 +226,8 @@ class Unet2D_spinal(nn.Module):
 
         self.center = nn.Sequential(
             ConvBnRelu(self.start_channel*4, self.start_channel*8, kernel_size=(3, 3), stride=1, padding=padding, momentum=momentum),
-            ConvBnRelu(self.start_channel*8, self.start_channel*8, kernel_size=(3, 3), stride=1, padding=padding, momentum=momentum)
+            nn.Conv2d(self.start_channel * 8, self.start_channel * 8, kernel_size=(3, 3), padding=padding, stride=1),
+            nn.BatchNorm2d(self.start_channel * 8)
         )
 
         self.up1 = StackDecoder(in_channels=self.start_channel*8, out_channels=self.start_channel*4, padding=padding, momentum=momentum)
@@ -235,7 +236,7 @@ class Unet2D_spinal(nn.Module):
 
 
         self.output_seg_map = nn.Conv2d(self.start_channel, 1, kernel_size=(1, 1), padding=0, stride=1)
-        self.output_up_seg_map = nn.Upsample(size=(self.heights, self.width), mode='nearest')
+
 
     def forward(self, x):
         x, x_trace1 = self.down1(x)
@@ -251,8 +252,8 @@ class Unet2D_spinal(nn.Module):
 
         out = self.output_seg_map(x)
 
-        if out.shape[-1] != self.width:
-            out = self.output_up_seg_map(out)
+        if self.relu_con :
+            center = F.relu(center)
 
         return out,center
 
@@ -323,10 +324,13 @@ class Unet2D_spinal_norm(nn.Module):
 
 
 class ae_spinal(nn.Module):
-    def __init__(self,in_shape,start_channel=64,kenel_size=3,padding=1):
+    def __init__(self,in_shape,start_channel=64,kenel_size=3,padding=1,relu_con=True):
         super(ae_spinal, self).__init__()
 
         self.channels, self.heights, self.width = in_shape
+        self.relu_con = relu_con
+
+
         self.encoder = nn.Sequential(
             nn.Conv2d(1, start_channel, kenel_size, padding=padding),
             nn.BatchNorm2d(start_channel),
@@ -346,7 +350,7 @@ class ae_spinal(nn.Module):
             #center
             nn.Conv2d(start_channel * 4, start_channel * 8, kenel_size, padding=padding),
             nn.BatchNorm2d(start_channel * 8),
-            nn.ReLU(),
+            #nn.ReLU(),
 
         )
 
@@ -374,6 +378,9 @@ class ae_spinal(nn.Module):
     def forward(self, x):
         encoder = self.encoder(x)
         decoder = self.decoder(encoder)
+
+        if self.relu_con :
+            encoder = F.relu(encoder)
 
         return decoder,encoder
 

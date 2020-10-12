@@ -21,7 +21,7 @@ import torchvision.transforms as transforms
 
 from medpy.metric import binary
 
-import dataloader as loader
+import dataloader as loader  ############################
 from utils import *
 from predict import main_test
 from model import *
@@ -61,7 +61,7 @@ parser.add_argument('--optim',default='sgd',
                     choices=['adam','adamp','sgd'],type=str)
 parser.add_argument('--weight-decay',default=5e-4,type=float)
 parser.add_argument('--eps',default=1e-8,type=float, help='adam eps')
-parser.add_argument('--adam-beta1',default=0.9,type=float, help='adam beta')
+
 
 parser.add_argument('--seg-loss-function',default='bce_logit',type=str)
 parser.add_argument('--ae-loss-function',default='bce_logit',type=str)
@@ -187,7 +187,6 @@ def main():
                                          weight_decay=args.weight_decay)
 
         optimizer_ae = torch.optim.Adam(model_ae.parameters(),
-                                        betas=(args.adam_beta1,0.999),
                                         eps=args.eps,
                                         lr=args.lr,
                                         weight_decay=args.weight_decay)
@@ -317,7 +316,7 @@ def train(model_seg, model_ae, train_loader, epoch,
     model_ae.train()
     end = time.time()
 
-    for i, (input, target, _) in enumerate(train_loader):
+    for i, (input, target, _, _) in enumerate(train_loader):
 
         data_time.update(time.time() - end)
         input, target = input.cuda(), target.cuda()
@@ -442,7 +441,7 @@ def validate(model_seg, model_ae, val_loader, epoch, criterion,
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, ori_img) in enumerate(val_loader):
+        for i, (input, target, ori_img, _) in enumerate(val_loader):
             input = input.cuda()
             target = target.cuda()
 

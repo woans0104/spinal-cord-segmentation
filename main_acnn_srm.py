@@ -50,18 +50,17 @@ parser.add_argument('--arch-ae', default='ae_v2', type=str)
 parser.add_argument('--arch-ae-detach', default=True, type=str2bool)
 
 parser.add_argument('--embedding-alpha', default=1, type=float)
-parser.add_argument('--denoising',default=True,type=str2bool)
-parser.add_argument('--salt-prob', default=0.1, type=float)
+parser.add_argument('--embedding-beta', default=0.001, type=float)
+
 
 # arguments for optim & loss
 parser.add_argument('--optim',default='sgd',
                     choices=['adam','adamp','sgd'],type=str)
 parser.add_argument('--weight-decay',default=5e-4,type=float)
 parser.add_argument('--eps',default=1e-8,type=float, help='adam eps')
-parser.add_argument('--adam-beta1',default=0.9,type=float, help='adam beta')
+
 
 parser.add_argument('--seg-loss-function',default='bce_logit',type=str)
-parser.add_argument('--ae-loss-function',default='bce_logit',type=str)
 parser.add_argument('--embedding-loss-function',default='mse',type=str)
 
 parser.add_argument('--lr', default=0.1, type=float, help='initial-lr')
@@ -91,6 +90,10 @@ def main():
     elif args.server == 'server_B':
         work_dir = os.path.join('/data1/workspace/JM_gen/'
                                 'spinal_cord_segmentation', args.exp)
+        print(work_dir)
+    elif args.server == 'server_D':
+        work_dir = os.path.join('/daintlab/home/woans0104/workspace/'
+                                'spinal-cord-segmentation', args.exp)
         print(work_dir)
 
     if not os.path.exists(work_dir):
@@ -182,14 +185,12 @@ def main():
     # 4.optim
     if args.optim == 'adam':
         optimizer_seg = torch.optim.Adam(model_seg.parameters(),
-                                         betas=(args.adam_beta1,0.999),
                                          eps=args.eps,
                                          lr=args.lr,
                                          weight_decay=args.weight_decay)
 
     elif args.optim == 'adamp':
         optimizer_seg = AdamP(model_seg.parameters(),
-                              betas=(args.adam_beta1,0.999),
                               eps=args.eps,
                               lr=args.lr,
                               weight_decay=args.weight_decay)
@@ -212,7 +213,7 @@ def main():
     # 5.loss
 
     criterion_seg = select_loss(args.seg_loss_function)
-    criterion_ae = select_loss(args.ae_loss_function)
+    criterion_embedding = select_loss(args.embedding_loss_function)
 
 
     ###########################################################################
@@ -229,7 +230,7 @@ def main():
                       train_loader=train_loader_source,
                       epoch=epoch,
                       criterion_seg=criterion_seg,
-                      criterion_ae=criterion_ae,
+                      criterion_embedding=criterion_embedding,
                       optimizer_seg=optimizer_seg,
                       logger=trn_logger,
                       sublogger=trn_raw_logger)
@@ -281,7 +282,7 @@ def main():
 
 
 def train(model_seg, model_ae, train_loader, epoch,
-          criterion_seg, criterion_ae,optimizer_seg,
+          criterion_seg, criterion_embedding,optimizer_seg,
           logger, sublogger):
 
 
@@ -297,10 +298,12 @@ def train(model_seg, model_ae, train_loader, epoch,
     model_ae.eval()
     end = time.time()
 
-    for i, (input, target,_) in enumerate(train_loader):
+    for i, (input, target,_,_) in enumerate(train_loader):
 
         data_time.update(time.time() - end)
-        input, target = input.cuda(), target.cuda()
+        input  = input.cuda()
+        with torch.no_grad():
+            target = target.cuda()
 
         output_seg, bottom_seg = model_seg(input)
         loss_seg = criterion_seg(output_seg, target)
@@ -311,27 +314,28 @@ def train(model_seg, model_ae, train_loader, epoch,
             output_srm, bottom_srm = model_ae(output_seg)
             _, bottom_ae = model_ae(target)
 
+            bottom_srm = F.sigmoid(bottom_srm)
+            bottom_ae = F.sigmoid(bottom_ae)
 
-            loss_embedding = criterion_ae(bottom_srm, bottom_ae)  # bce
 
+            loss_embedding = criterion_embedding(bottom_srm, bottom_ae)  # bce
+            loss_embedding = float(args.embedding_alpha) * loss_embedding
 
             loss_recon = DiceLoss().cuda()
             loss_recon = loss_recon(output_srm, target)
+            loss_recon = float(args.embedding_beta) * loss_recon
 
-            total_loss = (loss_seg) \
-                         + (float(args.embedding_alpha) * loss_embedding) \
-                         + (float(args.embedding_beta) * loss_recon)
+            total_loss = (loss_seg) + (loss_embedding) + (loss_recon)
 
 
         elif args.arch_seg == 'ACNN':
 
             _, bottom_acnn = model_ae(output_seg)
             _, bottom_ae = model_ae(target)
-            loss_embedding = criterion_ae(bottom_acnn, bottom_ae)
-
+            loss_embedding = criterion_embedding(bottom_acnn, bottom_ae)
 
             loss_embedding = float(args.embedding_alpha) * loss_embedding
-            loss = (loss_seg) + (loss_embedding)
+            total_loss = (loss_seg) + (loss_embedding)
 
         else:
             print('Not training')
@@ -369,7 +373,7 @@ def train(model_seg, model_ae, train_loader, epoch,
             iou=ious, dice=dices))
 
         if i % 10 == 0:
-            sublogger.write([epoch, i, loss.item(), iou, dice])
+            sublogger.write([epoch, i, total_loss.item(), iou, dice])
 
     if args.arch_seg == 'SRM':
         logger.write(
@@ -385,14 +389,14 @@ def train(model_seg, model_ae, train_loader, epoch,
 
 
 
-def validate(model, val_loader, epoch, criterion, logger):
+def validate(model_seg, val_loader, epoch, criterion, logger):
 
     batch_time = AverageMeter()
     losses = AverageMeter()
     ious = AverageMeter()
     dices = AverageMeter()
 
-    model.eval()
+    model_seg.eval()
 
     with torch.no_grad():
         end = time.time()
@@ -401,7 +405,7 @@ def validate(model, val_loader, epoch, criterion, logger):
             input = input.cuda()
             target = target.cuda()
 
-            output,_ = model(input)
+            output,_ = model_seg(input)
             loss = criterion(output, target)
 
 

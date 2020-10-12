@@ -177,7 +177,7 @@ def predict(server, work_dir, model, input_size, exam_root,
 
     model.eval()
     with torch.no_grad():
-        for i, (input, target, img_ori ) in enumerate(tst_loader):
+        for i, (input, target, img_ori, image_name ) in enumerate(tst_loader):
 
             input = input.cuda()
 
@@ -197,7 +197,7 @@ def predict(server, work_dir, model, input_size, exam_root,
             input_img_li.append(img_ori)
             target_img_li.append(target)
 
-            image_name = exam_root +'_' +str(i)
+            image_name = image_name[0].split('/')[-1].split('.png')[0]
             image_name_li.append(image_name)
 
         print('end---------')
@@ -416,7 +416,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--server', default='server_B')
     parser.add_argument('--exp', type=str)
-    parser.add_argument('--file-name', default='result_all_acd', type=str)
+    parser.add_argument('--file-name', default='result_all_acd2', type=str)
     parser.add_argument('--source-dataset', default='site2',
                         help='site2,site3,site4')
     parser.add_argument('--arch', default='unet', type=str)

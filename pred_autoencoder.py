@@ -168,7 +168,7 @@ def predict(server, work_dir, model, input_size, exam_root,
 
     model.eval()
     with torch.no_grad():
-        for i, (input, target, img_ori ) in enumerate(tst_loader):
+        for i, (input, target, img_ori,image_name ) in enumerate(tst_loader):
 
             target = target.cuda()
 
@@ -187,7 +187,7 @@ def predict(server, work_dir, model, input_size, exam_root,
             input_img_li.append(img_ori)
             target_img_li.append(target)
 
-            image_name = exam_root +'_' +str(i)
+            image_name = image_name[0].split('/')[-1].split('.png')[0]
             image_name_li.append(image_name)
 
         print('end---------')

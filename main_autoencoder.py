@@ -22,7 +22,7 @@ from medpy.metric import binary
 import dataloader as loader
 from utils import *
 import torch.optim as optim
-from predict import main_test
+from pred_autoencoder import main_test
 from adamp import AdamP
 
 parser = argparse.ArgumentParser()
@@ -71,11 +71,6 @@ parser.add_argument('--test-mode',default=True,type=str2bool)
 
 
 
-# arguments for test mode
-parser.add_argument('--inplace-test', default=1, type=int)
-parser.add_argument('--file-name', default='result_all', type=str)
-
-
 
 args = parser.parse_args()
 
@@ -89,7 +84,9 @@ def main():
         work_dir = os.path.join('/data1/workspace/JM_gen/'
                                 'spinal_cord_segmentation', args.exp)
         print(work_dir)
-
+    elif args.server == 'server_D':
+        work_dir = os.path.join('/daintlab/home/woans0104/workspace/'
+                                'spinal-cord-segmentation',args.exp)
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
 
@@ -277,7 +274,7 @@ def train(model, train_loader, epoch, criterion, optimizer, logger, sublogger):
     model.train()
     end = time.time()
 
-    for i, (input, target,_) in enumerate(train_loader):
+    for i, (input, target,_,_) in enumerate(train_loader):
 
 
         data_time.update(time.time() - end)
@@ -340,7 +337,7 @@ def validate(model, val_loader, epoch, criterion, logger, work_dir):
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, ori_img ) in enumerate(val_loader):
+        for i, (input, target, ori_img,_ ) in enumerate(val_loader):
             input = input.cuda()
             target = target.cuda()
 

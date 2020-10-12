@@ -279,7 +279,7 @@ def train(model, train_loader, epoch, criterion, optimizer, logger, sublogger):
     model.train()
     end = time.time()
 
-    for i, (input, target,_) in enumerate(train_loader):
+    for i, (input, target,_,_) in enumerate(train_loader):
 
 
         data_time.update(time.time() - end)
@@ -335,7 +335,7 @@ def validate(model, val_loader, epoch, criterion, logger, work_dir):
 
     with torch.no_grad():
         end = time.time()
-        for i, (input, target, ori_img ) in enumerate(val_loader):
+        for i, (input, target, ori_img,_ ) in enumerate(val_loader):
             input = input.cuda()
             target = target.cuda()
 

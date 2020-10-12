@@ -68,11 +68,16 @@ class Spinal_Dataset(Dataset):
             print('not not not')
 
 
-        resize = transforms.Resize((self.input_size, self.input_size),
-                                   interpolation=Image.NEAREST)
+        resize = transforms.Resize((self.input_size, self.input_size))
+
 
         img = resize(img)
         mask = resize(mask)
+
+
+        mask = np.array(mask) ####################
+        mask[mask > 0] = 1 ################
+        mask[mask < 0] = 0
 
 
         return img,mask
@@ -142,6 +147,15 @@ class Spinal_Dataset(Dataset):
             color_jitter = transforms.ColorJitter(brightness=0.2, contrast=0.2)
             image = color_jitter(image)
 
+        elif aug_range == 'aug10':
+
+            color_jitter = transforms.ColorJitter(brightness=0.4,contrast=0.4)
+            image = color_jitter(image)
+
+        elif aug_range == 'aug11':
+
+            color_jitter = transforms.ColorJitter(brightness=(0.6,1.4),contrast=(0.6,1.4))
+            image = color_jitter(image)
         else:
             print('not augmentation')
 
@@ -156,22 +170,22 @@ class Spinal_Dataset(Dataset):
 
         # indexing test
 
-        image = self.image_paths_pre[index]
-        mask = self.target_paths_pre[index]
+        image_name = self.image_paths_pre[index]
+        mask_name = self.target_paths_pre[index]
 
-        image = np.array(Image.open(image).convert('L'), 'uint8')
-        mask = np.array(Image.open(mask).convert('L'), 'uint8')
+        image = np.array(Image.open(image_name).convert('L'), 'uint8')
+        mask = np.array(Image.open(mask_name).convert('L'), 'uint8')
 
         # histogram equalization
-        image = cv2.equalizeHist(image)  ##########
+        #image = cv2.equalizeHist(image)  ##########
 
         # center_crop
         image_crop, mask_crop = self.center_crop(image, mask, self.dataset)
 
         # arg
         if self.aug_mode:
-            image_aug = self.aug(image_crop,self.aug_range)
-            image_tensor = self.transforms(image_aug)
+            image_crop = self.aug(image_crop,self.aug_range)
+            image_tensor = self.transforms(image_crop)
         else:
             image_tensor = self.transforms(image_crop)
 
@@ -193,7 +207,7 @@ class Spinal_Dataset(Dataset):
         toTensor = transforms.ToTensor()
         mask_tensor = toTensor(mask_crop)
 
-        return image_tensor, mask_tensor, np.array(image_crop)
+        return image_tensor, mask_tensor, np.array(image_crop), image_name
 
 
 
@@ -271,7 +285,7 @@ def get_loader(server, dataset, train_size, batch_size, input_size,
 
         tst_loader = data.DataLoader(tst_dataset,
                                       batch_size=1,
-                                      shuffle=True,
+                                      shuffle=False,
                                       num_workers=0)
 
         return trn_loader, tst_loader
@@ -296,7 +310,7 @@ def get_loader(server, dataset, train_size, batch_size, input_size,
 
         trn_loader = data.DataLoader(trn_dataset,
                                        batch_size=batch_size,
-                                       shuffle=True,
+                                       shuffle=False,
                                        num_workers=4)
 
 
